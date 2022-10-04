@@ -5,6 +5,7 @@ import {
   PutItemCommand,
 } from "@aws-sdk/client-dynamodb"
 import { dynamoDbClient } from "./dbClient"
+import {uuid as uuidv4} from 'uuid'
 
 exports.handler = async function (event) {
   console.log("request", JSON.stringify(event, null, 2))
@@ -74,11 +75,15 @@ const createProduct = async (event) => {
   console.log(`createProduct, event: ${event}`)
 
   try {
-    const reqBody = JSON.parse(event.body)
+    const productRequest = JSON.parse(event.body)
+
+    //set productId
+    const productId = uuidv4()
+    productRequest.id = productId
 
     const params = {
       TableName: process.env.DYNAMODB_TABLE_NAME,
-      Item: marshall(reqBody || {}),
+      Item: marshall(productRequest || {}),
     }
 
     const result = await dynamoDbClient.send(new PutItemCommand(params))
