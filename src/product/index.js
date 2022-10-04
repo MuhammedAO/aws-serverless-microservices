@@ -3,9 +3,10 @@ import {
   GetItemCommand,
   ScanCommand,
   PutItemCommand,
+  DeleteItemCommand,
 } from "@aws-sdk/client-dynamodb"
 import { dynamoDbClient } from "./dbClient"
-import {uuid as uuidv4} from 'uuid'
+import { uuid as uuidv4 } from "uuid"
 
 exports.handler = async function (event) {
   console.log("request", JSON.stringify(event, null, 2))
@@ -19,6 +20,9 @@ exports.handler = async function (event) {
       }
     case "POST":
       body = await createProduct(event)
+      break
+    case "DELETE":
+      body = await deleteProduct(event.pathParameters.id)
       break
 
     default:
@@ -89,6 +93,23 @@ const createProduct = async (event) => {
     const result = await dynamoDbClient.send(new PutItemCommand(params))
     console.log("createResult", result)
     return result
+  } catch (error) {
+    console.log(error)
+    throw new Error(error)
+  }
+}
+
+const deleteProduct = async (productId) => {
+  console.log("Delete in progress", productId)
+  try {
+    const params = {
+      TableName: process.env.DYNAMODB_TABLE_NAME,
+      key: marshall({ id: productId }),
+    }
+
+    const deleteResult = dynamoDbClient.send(new DeleteItemCommand(params))
+    console.log("delete result", deleteResult)
+    return deleteResult
   } catch (error) {
     console.log(error)
     throw new Error(error)
