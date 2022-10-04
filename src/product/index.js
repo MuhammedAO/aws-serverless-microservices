@@ -4,6 +4,7 @@ import {
   ScanCommand,
   PutItemCommand,
   DeleteItemCommand,
+  UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb"
 import { dynamoDbClient } from "./dbClient"
 import { uuid as uuidv4 } from "uuid"
@@ -23,6 +24,9 @@ exports.handler = async function (event) {
       break
     case "DELETE":
       body = await deleteProduct(event.pathParameters.id)
+      break
+    case "PUT":
+      body = await updateProduct(event)
       break
 
     default:
@@ -107,9 +111,54 @@ const deleteProduct = async (productId) => {
       key: marshall({ id: productId }),
     }
 
-    const deleteResult = dynamoDbClient.send(new DeleteItemCommand(params))
+    const deleteResult = await dynamoDbClient.send(
+      new DeleteItemCommand(params)
+    )
     console.log("delete result", deleteResult)
     return deleteResult
+  } catch (error) {
+    console.log(error)
+    throw new Error(error)
+  }
+}
+
+const updateProduct = async (event) => {
+  try {
+    const requestBody = JSON.parse(event.body)
+    const objKeys = Object.keys(requestBody)
+
+    console.log("Updating product", requestBody, objKeys)
+
+    const params = {
+      TableName: process.env.DYNAMODB_TABLE_NAME,
+      Key: marshall({ id: event.pathParameters.id }),
+      UpdateExpression: `SET ${objKeys
+        .map((_, index) => `#key${index} = :value${index}`)
+        .join(", ")}`,
+      ExpressionAttributeNames: objKeys.reduce(
+        (acc, key, index) => ({
+          ...acc,
+          [`#key${index}`]: key,
+        }),
+        {}
+      ),
+      ExpressionAttributeValues: marshall(
+        objKeys.reduce(
+          (acc, key, index) => ({
+            ...acc,
+            [`:value${index}`]: requestBody[key],
+          }),
+          {}
+        )
+      ),
+    }
+
+    const updateResult = await dynamoDbClient.send(
+      new UpdateItemCommand(params)
+    )
+
+    console.log("update result", updateResult)
+    return updateResult
   } catch (error) {
     console.log(error)
     throw new Error(error)
