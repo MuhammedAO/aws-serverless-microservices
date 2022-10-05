@@ -5,6 +5,7 @@ import {
   PutItemCommand,
   DeleteItemCommand,
   UpdateItemCommand,
+  QueryCommand
 } from "@aws-sdk/client-dynamodb"
 import { dynamoDbClient } from "./dbClient"
 import { uuid as uuidv4 } from "uuid"
@@ -14,7 +15,10 @@ exports.handler = async function (event) {
   let body
   switch (event.httpMethod) {
     case "GET":
-      if (event.pathParameters !== null) {
+      if(event.queryStringParameters !== null) {
+        body = await getProductsByCategory(event)
+      } 
+      else if (event.pathParameters !== null) {
         body = await getProduct(event.pathParameters.id)
       } else {
         body = await getAllProducts()
@@ -162,5 +166,37 @@ const updateProduct = async (event) => {
   } catch (error) {
     console.log(error)
     throw new Error(error)
+  }
+}
+
+const getProductsByCategory = async (event) => {
+  console.log("getProductsByCategory")
+  try {
+    // GET product/1234?category=Phone
+    const productId = event.pathParameters.id
+    const category = event.queryStringParameters.category
+
+    // key condition expression—a string that determines the items to be read from the table or index.
+    // You must specify the partition key name and value as an equality condition.
+    // the : (colon character) indicates an expression attribute value—a placeholder for an actual value.
+    //Scan: scans all your rows. intensive. use only when neccessary
+    //Query: specialized scanning based on the partion key & other filtering expressions
+
+    const params = {
+      KeyConditionExpression: "id = :productId",
+      FilterExpression: "contains (category, :category)",
+      ExpressionAttributeValues: {
+        ":productId": { S: productId },
+        ":category": { S: category },
+      },
+      TableName: process.env.DYNAMODB_TABLE_NAME,
+    }
+
+    const { Items } = await ddbClient.send(new QueryCommand(params))
+
+    return Items.map((item) => unmarshall(item))
+  } catch (error) {
+    console.error(error)
+    throw error
   }
 }
