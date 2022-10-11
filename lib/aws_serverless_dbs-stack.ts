@@ -14,6 +14,7 @@ export class AwsServerlessDbsStack extends cdk.Stack {
 
     const microservices = new XyzMicroservices(this, "microsrvs", {
       productTable: database.productTable,
+      basketTable: database.basketTable
     })
 
     const apigateway = new XyzApiGateway(this, "Apigateway", {
