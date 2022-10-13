@@ -50,5 +50,8 @@ export class XyzApiGateway extends Construct {
     const singleBasket = basket.addResource("{userName}")
     singleBasket.addMethod("GET") // GET /basket/{userName}
     singleBasket.addMethod("DELETE") // DELETE /basket/{userName}
+
+    const basketCheckout = basket.addResource('checkout');
+    basketCheckout.addMethod('POST'); // POST /basket/checkout
   }
 }
