@@ -20,7 +20,7 @@ exports.handler = async function (event) {
       case "GET":
         if (event.queryStringParameters != null) {
           body = await getProductsByCategory(event)
-          event.pathParameters
+     
         } else if (event.pathParameters != null) {
           body = await getProduct(event)
         } else {
