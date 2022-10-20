@@ -1,9 +1,12 @@
 import * as cdk from "aws-cdk-lib"
+import { EventBus, Rule } from "aws-cdk-lib/aws-events"
+import { LambdaFunction } from "aws-cdk-lib/aws-events-targets"
 
 import { Construct } from "constructs"
 
 import { XyzApiGateway } from "./apigateway"
 import { XyzDatabse } from "./database"
+import { XyzEventBust } from "./event-bus"
 import { XyzMicroservices } from "./microservice"
 
 export class AwsServerlessDbsStack extends cdk.Stack {
@@ -14,14 +17,20 @@ export class AwsServerlessDbsStack extends cdk.Stack {
 
     const microservices = new XyzMicroservices(this, "microsrvs", {
       productTable: database.productTable,
-      basketTable: database.basketTable
+      basketTable: database.basketTable,
+      orderTable: database.orderTable
     })
 
     const apigateway = new XyzApiGateway(this, "Apigateway", {
       productMicroservice: microservices.productMicroservice,
-      basketMicroservice: microservices.basketMicroservice
+      basketMicroservice: microservices.basketMicroservice,
+      orderMicroservice: microservices.orderMicroservice
     })
 
+    const eventbus = new XyzEventBust(this, "EventBus", {
+      publisherFunction: microservices.basketMicroservice,
+      targetFunction:  microservices.orderMicroservice
+    })
     
   }
 }
