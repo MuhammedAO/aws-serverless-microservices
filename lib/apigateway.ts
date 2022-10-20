@@ -6,6 +6,7 @@ import { Construct } from "constructs"
 interface XyzApiGatewayProps {
   productMicroservice: IFunction
   basketMicroservice: IFunction
+  orderMicroservice: IFunction
 }
 
 export class XyzApiGateway extends Construct {
@@ -14,6 +15,7 @@ export class XyzApiGateway extends Construct {
 
     this.createProductApi(props.productMicroservice)
     this.createBasketApi(props.basketMicroservice)
+    this.createOrderApi(props.orderMicroservice)
   }
 
   private createProductApi(productMicroservice: IFunction) {
@@ -50,5 +52,32 @@ export class XyzApiGateway extends Construct {
     const singleBasket = basket.addResource("{userName}")
     singleBasket.addMethod("GET") // GET /basket/{userName}
     singleBasket.addMethod("DELETE") // DELETE /basket/{userName}
+  }
+
+  private createOrderApi(orderingMicroservices: IFunction) {
+    // Ordering microservices api gateway
+    // root name = order
+
+    // GET /order
+    // GET /order/{userName}
+    // expected request : xxx/order/swn?orderDate=timestamp
+    // ordering ms grap input and query parameters and filter to dynamo db
+
+    const OrderApiGw = new LambdaRestApi(this, "orderApi", {
+      restApiName: "Order Service",
+      handler: orderingMicroservices,
+      proxy: false,
+    })
+
+    const order = OrderApiGw.root.addResource("order")
+    order.addMethod("GET") // GET /order
+
+    const singleOrder = order.addResource("{userName}")
+    singleOrder.addMethod("GET") // GET /order/{userName}
+    // expected request : xxx/order/swn?orderDate=timestamp
+    // ordering ms grap input and query parameters and filter to dynamo db
+
+    return singleOrder
+
   }
 }
