@@ -61,6 +61,10 @@ export class XyzMicroservices extends Construct {
       environment: {
         PRIMARY_KEY: "userName",
         DYNAMODB_TABLE_NAME: basketTable.tableName,
+        EVENT_SOURCE: "com.xyz.basket.checkoutbasket",
+        EVENT_DETAILTYPE: "CheckoutBasket",
+        EVENT_BUSNAME: "XyzEventBus"
+
       },
       runtime: Runtime.NODEJS_14_X,
     }
