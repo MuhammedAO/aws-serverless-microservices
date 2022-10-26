@@ -6,6 +6,8 @@ import {
   PutItemCommand,
   DeleteItemCommand,
 } from "@aws-sdk/client-dynamodb"
+import { PutEventsCommand } from "@aws-sdk/client-eventbridge"
+import { ebClient } from "./eventBridgeClient"
 
 exports.handler = async function (event) {
   console.log("basker request", JSON.stringify(event, null, 2))
@@ -130,6 +132,7 @@ const deleteBasket = async (userName) => {
     throw new Error(error)
   }
 }
+
 const checkoutBasket = async (event) => {
   const checkoutRequest = JSON.parse(event.body)
 
@@ -172,5 +175,33 @@ const prepareOrderPayload = (checkoutRequest, basket) => {
   } catch (e) {
     console.error(e)
     throw e
+  }
+}
+
+
+const publishCheckoutBasketEvent = async (checkoutPayload) => {
+  console.log("publishCheckoutBasketEvent with payload :", checkoutPayload);
+  try {
+      // eventbridge parameters for setting event to target system
+      const params = {
+          Entries: [
+              {
+                  Source: process.env.EVENT_SOURCE,
+                  Detail: JSON.stringify(checkoutPayload),
+                  DetailType: process.env.EVENT_DETAILTYPE,
+                  Resources: [ ],
+                  EventBusName: process.env.EVENT_BUSNAME
+              },
+          ],
+      };
+   
+      const data = await ebClient.send(new PutEventsCommand(params));
+  
+      console.log("Success, event sent; requestID:", data);
+      return data;
+  
+    } catch(e) {
+      console.error(e);
+      throw e;
   }
 }
