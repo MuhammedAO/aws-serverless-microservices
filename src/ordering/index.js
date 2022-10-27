@@ -8,12 +8,51 @@ exports.handler = async function (event) {
     await eventBridgeInvocation(event)
   } else {
     // API Gateway Invocation -- return sync response
-   //  return await apiGatewayInvocation(event)
+    return await apiGatewayInvocation(event)
   }
 
   return {
     statusCode: 200,
     body: "Hello World!",
+  }
+}
+
+const apiGatewayInvocation = async (event) => {
+  // GET /order
+  // GET /order/{userName}
+  let body
+
+  try {
+    switch (event.httpMethod) {
+      case "GET":
+        if (event.pathParameters != null) {
+         //  body = await getOrder(event)
+        } else {
+         //  body = await getAllOrders()
+        }
+        break
+      default:
+        throw new Error(`Unsupported route: "${event.httpMethod}"`)
+    }
+
+    console.log(body)
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: `Successfully finished operation: "${event.httpMethod}"`,
+        body: body,
+      }),
+    }
+  } catch (e) {
+    console.error(e)
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: "Failed to perform operation.",
+        errorMsg: e.message,
+        errorStack: e.stack,
+      }),
+    }
   }
 }
 
