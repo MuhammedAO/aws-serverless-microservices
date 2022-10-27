@@ -24,3 +24,26 @@ const eventBridgeInvocation = async (event) => {
   await createOrder(event.detail)
 }
 
+const createOrder = async (basketCheckoutEvent) => {
+  try {
+    console.log(`createOrder function. event : "${basketCheckoutEvent}"`)
+
+    // set orderDate for SK of order dynamodb
+    const orderDate = new Date().toISOString()
+    basketCheckoutEvent.orderDate = orderDate
+
+    console.log(basketCheckoutEvent)
+
+    const params = {
+      TableName: process.env.DYNAMODB_TABLE_NAME,
+      Item: marshall(basketCheckoutEvent || {}),
+    }
+
+    const createResult = await dynamoDbClient.send(new PutItemCommand(params))
+    console.log(createResult)
+    return createResult
+  } catch (e) {
+    console.error(e)
+    throw e
+  }
+}
