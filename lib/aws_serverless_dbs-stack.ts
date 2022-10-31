@@ -8,6 +8,7 @@ import { XyzApiGateway } from "./apigateway"
 import { XyzDatabse } from "./database"
 import { XyzEventBust } from "./event-bus"
 import { XyzMicroservices } from "./microservice"
+import { XyzQueue } from "./queue"
 
 export class AwsServerlessDbsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -27,9 +28,14 @@ export class AwsServerlessDbsStack extends cdk.Stack {
       orderMicroservice: microservices.orderMicroservice
     })
 
+    const queue = new XyzQueue(this, 'Queue', {
+      consumer: microservices.orderMicroservice
+    });
+
+
     const eventbus = new XyzEventBust(this, "EventBus", {
       publisherFunction: microservices.basketMicroservice,
-      targetFunction:  microservices.orderMicroservice
+      targetQueue: queue.orderQueue
     })
     
   }
