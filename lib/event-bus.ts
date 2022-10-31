@@ -1,11 +1,13 @@
 import { IFunction } from "aws-cdk-lib/aws-lambda"
 import { Construct } from "constructs"
 import { EventBus, Rule } from "aws-cdk-lib/aws-events"
-import { LambdaFunction } from "aws-cdk-lib/aws-events-targets"
+import {  SqsQueue } from "aws-cdk-lib/aws-events-targets"
+import { IQueue } from "aws-cdk-lib/aws-sqs"
+
 
 interface XyzEventBusProps {
   publisherFunction: IFunction
-  targetFunction: IFunction
+  targetQueue: IQueue
 }
 
 export class XyzEventBust extends Construct {
@@ -30,7 +32,10 @@ export class XyzEventBust extends Construct {
     })
     
     //target
-    checkoutBasketRule.addTarget(new LambdaFunction(props.targetFunction))
+    // checkoutBasketRule.addTarget(new LambdaFunction(props.targetFunction))
+
+    //publish message to the queue
+    checkoutBasketRule.addTarget(new SqsQueue(props.targetQueue))
 
     bus.grantPutEventsTo(props.publisherFunction)
   }
