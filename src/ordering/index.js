@@ -1,5 +1,5 @@
-const { PutItemCommand } = require("@aws-sdk/client-dynamodb")
-const { marshall } = require("@aws-sdk/util-dynamodb")
+const { PutItemCommand, QueryCommand, ScanCommand } = require("@aws-sdk/client-dynamodb")
+const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb")
 const { dynamoDbClient } = require("./dbClient")
 
 exports.handler = async function (event) {
@@ -11,10 +11,6 @@ exports.handler = async function (event) {
     return await apiGatewayInvocation(event)
   }
 
-  return {
-    statusCode: 200,
-    body: "Hello World!",
-  }
 }
 
 const apiGatewayInvocation = async (event) => {
@@ -26,9 +22,9 @@ const apiGatewayInvocation = async (event) => {
     switch (event.httpMethod) {
       case "GET":
         if (event.pathParameters != null) {
-         //  body = await getOrder(event)
+          body = await getOrder(event)
         } else {
-         //  body = await getAllOrders()
+          body = await getAllOrders()
         }
         break
       default:
@@ -86,3 +82,32 @@ const createOrder = async (basketCheckoutEvent) => {
     throw e
   }
 }
+
+const getOrder = async (event) => {
+   console.log("getOrder");
+     
+   try {
+     // expected request : xxx/order/xyz?orderDate=timestamp
+     const userName = event.pathParameters.userName;  
+     const orderDate = event.queryStringParameters.orderDate; 
+      //required params to access order table, composite primary key
+     const params = {
+       KeyConditionExpression: "userName = :userName and orderDate = :orderDate",
+       ExpressionAttributeValues: {
+         ":userName": { S: userName },
+         ":orderDate": { S: orderDate }
+       },
+       TableName: process.env.DYNAMODB_TABLE_NAME
+     };
+  
+     const { Items } = await dynamoDbClient.send(new QueryCommand(params));
+ 
+     console.log(Items);
+     return Items.map((item) => unmarshall(item));
+   } catch(e) {
+     console.error(e);
+     throw e;
+   }
+ }
+
+
