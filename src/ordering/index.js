@@ -3,14 +3,42 @@ const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb")
 const { dynamoDbClient } = require("./dbClient")
 
 exports.handler = async function (event) {
-  if (event["detail-type"] !== undefined) {
+  // if (event["detail-type"] !== undefined) {
+  //   // EventBridge Invocation
+  //   await eventBridgeInvocation(event)
+  // } else {
+  //   // API Gateway Invocation -- return sync response
+  //   return await apiGatewayInvocation(event)
+  // }
+
+  if(event.Records != null) {
+    // SQS Invocation
+    await sqsInvocation(event);
+  }
+  else if (event['detail-type'] !== undefined) {
     // EventBridge Invocation
-    await eventBridgeInvocation(event)
+    await eventBridgeInvocation(event);
   } else {
     // API Gateway Invocation -- return sync response
-    return await apiGatewayInvocation(event)
+    return await apiGatewayInvocation(event);
   }
 
+}
+
+
+const sqsInvocation = async (event) => {
+  console.log(`sqsInvocation function. event : "${event}"`);
+  
+  event.Records.forEach(async (record) => {
+    console.log('Record: %j', record);
+    
+    // expected request : { "detail-type\":\"CheckoutBasket\",\"source\":\"com.swn.basket.checkoutbasket\", "detail\":{\"userName\":\"swn\",\"totalPrice\":1820, .. }
+    const checkoutEventRequest = JSON.parse(record.body); 
+    
+    // create order item into db
+    await createOrder(checkoutEventRequest.detail); 
+    // detail object should be checkoutbasket json object
+  });
 }
 
 const apiGatewayInvocation = async (event) => {
