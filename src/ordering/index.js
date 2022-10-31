@@ -111,3 +111,20 @@ const getOrder = async (event) => {
  }
 
 
+ const getAllOrders = async () => {  
+   console.log("getAllOrders");    
+   try {
+       const params = {
+       TableName: process.env.DYNAMODB_TABLE_NAME
+       };
+   
+       const { Items } = await dynamoDbClient.send(new ScanCommand(params));
+ 
+       console.log(Items);
+       return (Items) ? Items.map((item) => unmarshall(item)) : {};
+ 
+   } catch(e) {
+       console.error(e);
+       throw e;
+   }
+ }
